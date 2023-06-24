@@ -17,6 +17,7 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.apache.commons.codec.digest.DigestUtils
 
 fun Route.signUp(
     hashingService: HashingService,
@@ -27,20 +28,25 @@ fun Route.signUp(
             call.respond(HttpStatusCode.BadRequest)
             return@post
         }
+
         val areFieldsBlank = request.username.isBlank() || request.password.isBlank()
         val isPwTooShort = request.password.length < 8
-        if (areFieldsBlank || isPwTooShort) {
+        if(areFieldsBlank || isPwTooShort) {
             call.respond(HttpStatusCode.Conflict)
             return@post
         }
+
         val saltedHash = hashingService.generateSaltedHash(request.password)
+
+
+//        println("${request.username}\n\n\n\n${request.password}")
         val user = User(
             username = request.username,
             password = saltedHash.hash,
             salt = saltedHash.salt
         )
         val wasAcknowledged = userDataSource.insertUser(user)
-        if (!wasAcknowledged) {
+        if(!wasAcknowledged)  {
             call.respond(HttpStatusCode.Conflict)
             return@post
         }
@@ -48,10 +54,9 @@ fun Route.signUp(
         call.respond(HttpStatusCode.OK)
     }
 }
-
 fun Route.signIn(
-    hashingService: HashingService,
     userDataSource: UserDataSource,
+    hashingService: HashingService,
     tokenService: TokenService,
     tokenConfig: TokenConfig
 ) {
@@ -60,11 +65,13 @@ fun Route.signIn(
             call.respond(HttpStatusCode.BadRequest)
             return@post
         }
+
         val user = userDataSource.getByUserName(request.username)
-        if (user == null) {
+        if(user == null) {
             call.respond(HttpStatusCode.Conflict, "Incorrect username or password")
             return@post
         }
+        println("${request.username}\n\n\n\n${request.password}")
 
         val isValidPassword = hashingService.verify(
             value = request.password,
@@ -73,7 +80,8 @@ fun Route.signIn(
                 salt = user.salt
             )
         )
-        if (!isValidPassword){
+        if(!isValidPassword) {
+            println("Entered hash: ${DigestUtils.sha256Hex("${user.salt}${request.password}")}, Hashed PW: ${user.password}")
             call.respond(HttpStatusCode.Conflict, "Incorrect username or password")
             return@post
         }
@@ -85,6 +93,7 @@ fun Route.signIn(
                 value = user.id.toString()
             )
         )
+
         call.respond(
             status = HttpStatusCode.OK,
             message = AuthResponse(
@@ -93,6 +102,7 @@ fun Route.signIn(
         )
     }
 }
+
 
 fun Route.authenticate(){
     authenticate {

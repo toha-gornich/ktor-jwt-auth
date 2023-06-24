@@ -17,14 +17,15 @@ fun main(args: Array<String>): Unit =
 
 @Suppress("unused") // application.conf references the main function. This annotation prevents the IDE from marking it as unused.
 fun Application.module() {
-    //підключення до монго дб
-    val mongoPw = System.getenv("MONGO_PW")
-    val dbName = "ktor-auth"
-    val db = KMongo.createClient(
-        connectionString = "mongodb+srv://hornihanton:$mongoPw@cluster0.t6qerxj.mongodb.net/$dbName?retryWrites=true&w=majority"
-    ).coroutine
-        .getDatabase(dbName)
+    //підключення до монго дб у випадку якшо база даних віддалена
+//    val mongoPw = System.getenv("MONGO_PW")
+//    val dbName = "ktor-auth"
+//    val db = KMongo.createClient(
+//        connectionString = "mongodb+srv://hornihanton:$mongoPw@cluster0.t6qerxj.mongodb.net/$dbName?retryWrites=true&w=majority"
+//    ).coroutine
+//        .getDatabase(dbName)
 
+    val db = KMongo.createClient("mongodb://localhost:2717/").coroutine.getDatabase("enchantMart")
     //передаєм нашу ініціалізовану бд в MongoUserDataSource і з якою ми в подальшому бедм працювати
     val userDataSource = MongoUserDataSource(db)
     val tokenService = JwtTokenService()

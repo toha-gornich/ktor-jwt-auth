@@ -4,14 +4,14 @@ import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import java.security.SecureRandom
 
-class SHA256HashingService:HashingService {
+class SHA256HashingService: HashingService {
 
     override fun generateSaltedHash(value: String, saltLength: Int): SaltedHash {
 
         //рандомна генерація salt це штука яка додасться до пароля перед його хешуванням
         val salt = SecureRandom.getInstance("SHA1PRNG").generateSeed(saltLength)
         val saltAsHex = Hex.encodeHexString(salt)
-        val hash = DigestUtils.sha256Hex("$value$salt")
+        val hash = DigestUtils.sha256Hex("$saltAsHex$value")
         //повернення хешу і солт як 16_ сист
         return SaltedHash(
             hash = hash,
@@ -20,6 +20,6 @@ class SHA256HashingService:HashingService {
     }
 //метод перевіряє чи хеш збігається
     override fun verify(value: String, saltedHash: SaltedHash): Boolean {
-        return DigestUtils.sha256Hex(saltedHash.salt+value) == saltedHash.hash
+        return DigestUtils.sha256Hex(saltedHash.salt + value) == saltedHash.hash
     }
 }
